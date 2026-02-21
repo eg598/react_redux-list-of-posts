@@ -38,6 +38,10 @@ export const commentsSlice = createSlice({
         hasError: action.payload,
       };
     },
+
+    addComment: (state, action: PayloadAction<Comment>) => {
+      state.items.push(action.payload);
+    },
   },
 });
 

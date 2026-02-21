@@ -16,7 +16,7 @@ type Props = {
 export const PostDetails: React.FC<Props> = ({ post }) => {
   const dispatch = useAppDispatch();
   const { items, loaded, hasError } = useAppSelector(s => s.comments);
-  const [visible, setVisible] = useState(false); // reimplement as props
+  const [visible, setVisible] = useState(false);
 
   function loadComments() {
     dispatch(commentsSlice.actions.setLoaded(false));
@@ -67,7 +67,7 @@ export const PostDetails: React.FC<Props> = ({ post }) => {
         postId: post.id,
       });
 
-      dispatch(commentsSlice.actions.setComments([...items, newComment]));
+      dispatch(commentsSlice.actions.addComment(newComment));
 
       // setComments([...comments, newComment]);
       // works wrong if we wrap `addComment` with `useCallback`
@@ -80,16 +80,20 @@ export const PostDetails: React.FC<Props> = ({ post }) => {
   };
 
   const deleteComment = async (commentId: number) => {
-    // we delete the comment immediately so as
-    // not to make the user wait long for the actual deletion
-    // eslint-disable-next-line max-len
+    const previousComments = [...items];
+
     dispatch(
       commentsSlice.actions.setComments(
         items.filter(comment => comment.id !== commentId),
       ),
     );
 
-    await commentsApi.deleteComment(commentId);
+    try {
+      await commentsApi.deleteComment(commentId);
+    } catch (error) {
+      dispatch(commentsSlice.actions.setComments(previousComments));
+      dispatch(commentsSlice.actions.setError(true));
+    }
   };
 
   return (
