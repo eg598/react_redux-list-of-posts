@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import classNames from 'classnames';
 
 import 'bulma/css/bulma.css';
@@ -10,17 +10,17 @@ import { PostDetails } from './components/PostDetails';
 import { UserSelector } from './components/UserSelector';
 import { Loader } from './components/Loader';
 import { getUserPosts } from './api/posts';
-import { Post } from './types/Post';
 import { useAppDispatch, useAppSelector } from './app/hooks';
 import { authorSlice } from './features/author';
 import { postsSlice } from './features/posts';
+import { selectedPostSlice } from './features/selectedPost';
 
 export const App: React.FC = () => {
   const { items, loaded, hasError } = useAppSelector(s => s.posts);
 
   const dispatch = useAppDispatch();
   const author = useAppSelector(s => s.author);
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const selectedPost = useAppSelector(s => s.selectedPost);
 
   function loadUserPosts(userId: number) {
     dispatch(postsSlice.actions.setLoaded(false));
@@ -35,7 +35,7 @@ export const App: React.FC = () => {
   useEffect(() => {
     // we clear the post when an author is changed
     // not to confuse the user
-    setSelectedPost(null);
+    dispatch(selectedPostSlice.actions.setSelectedPost(null));
 
     if (author) {
       loadUserPosts(author.id);
@@ -82,7 +82,9 @@ export const App: React.FC = () => {
                 {author && loaded && !hasError && items.length > 0 && (
                   <PostsList
                     selectedPostId={selectedPost?.id}
-                    onPostSelected={setSelectedPost}
+                    onPostSelected={post =>
+                      dispatch(selectedPostSlice.actions.setSelectedPost(post))
+                    }
                   />
                 )}
               </div>
