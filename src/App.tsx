@@ -10,25 +10,26 @@ import { PostDetails } from './components/PostDetails';
 import { UserSelector } from './components/UserSelector';
 import { Loader } from './components/Loader';
 import { getUserPosts } from './api/posts';
-import { User } from './types/User';
 import { Post } from './types/Post';
+import { useAppDispatch, useAppSelector } from './app/hooks';
+import { authorSlice } from './features/author';
+import { postsSlice } from './features/posts';
 
 export const App: React.FC = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [hasError, setError] = useState(false);
+  const { items, loaded, hasError } = useAppSelector(s => s.posts);
 
-  const [author, setAuthor] = useState<User | null>(null);
+  const dispatch = useAppDispatch();
+  const author = useAppSelector(s => s.author);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   function loadUserPosts(userId: number) {
-    setLoaded(false);
+    dispatch(postsSlice.actions.setLoaded(false));
 
     getUserPosts(userId)
-      .then(setPosts)
-      .catch(() => setError(true))
+      .then(data => dispatch(postsSlice.actions.setPosts(data)))
+      .catch(() => dispatch(postsSlice.actions.setError(true)))
       // We disable the spinner in any case
-      .finally(() => setLoaded(true));
+      .finally(() => dispatch(postsSlice.actions.setLoaded(true)));
   }
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export const App: React.FC = () => {
     if (author) {
       loadUserPosts(author.id);
     } else {
-      setPosts([]);
+      dispatch(postsSlice.actions.setPosts([]));
     }
   }, [author]);
 
@@ -50,7 +51,12 @@ export const App: React.FC = () => {
           <div className="tile is-parent">
             <div className="tile is-child box is-success">
               <div className="block">
-                <UserSelector value={author} onChange={setAuthor} />
+                <UserSelector
+                  value={author}
+                  onChange={user =>
+                    dispatch(authorSlice.actions.setAuthor(user))
+                  }
+                />
               </div>
 
               <div className="block" data-cy="MainContent">
@@ -67,15 +73,14 @@ export const App: React.FC = () => {
                   </div>
                 )}
 
-                {author && loaded && !hasError && posts.length === 0 && (
+                {author && loaded && !hasError && items.length === 0 && (
                   <div className="notification is-warning" data-cy="NoPostsYet">
                     No posts yet
                   </div>
                 )}
 
-                {author && loaded && !hasError && posts.length > 0 && (
+                {author && loaded && !hasError && items.length > 0 && (
                   <PostsList
-                    posts={posts}
                     selectedPostId={selectedPost?.id}
                     onPostSelected={setSelectedPost}
                   />
